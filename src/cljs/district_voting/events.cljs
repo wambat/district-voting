@@ -24,6 +24,7 @@
     [medley.core :as medley]
     [print.foo :include-macros true]
     [district-voting.db :refer [setup-candidates]]
+    [print.foo :refer [look]]
     [re-frame.core :as re-frame :refer [reg-event-db reg-event-fx inject-cofx path trim-v after debug reg-fx console dispatch]]))
 
 (def interceptors [trim-v (validate-db :district-voting.db/db)])
@@ -60,6 +61,7 @@
   interceptors
   (fn [{:keys [db]} [voting-key]]
     (let [district-voting (get-instance db voting-key)]
+      (look [district-voting])
       {:web3-fx.contract/constant-fns
        {:fns [[(get-instance db voting-key)
                :voters-count
@@ -70,6 +72,7 @@
   :voters-count-loaded
   interceptors
   (fn [{:keys [db]} [voting-key voters-count]]
+    (look [:voters-count-loaded voting-key voters-count])
     {:db (assoc-in db [:votings voting-key :voting/voters-count] (bn/->number voters-count))
      :dispatch [:load-votes voting-key]}))
 
@@ -285,13 +288,16 @@
   :proposals/load
   interceptors
   (fn [{:keys [db]} [project]]
+    ;; (look ["Requested" project])
     {:db (assoc-in db [:proposals project :loading?] true)
      :http-xhrio
      {:method          :get
       :uri             (project-url project)
+      :params          {:per_page 1000}
       :headers         {"Accept"  "application/vnd.github.squirrel-girl-preview"}
       :timeout         8000
-      :response-format (ajax/json-response-format {:keywords? true})
+      ;;:response-format (ajax/json-response-format {:keywords? true}) ;;Troubles reading json viag goog lib
+      :response-format (ajax/text-response-format)
       :on-success      [:proposals/loaded project]
       :on-failure      [:proposals/load-failure project]}}))
 
@@ -299,11 +305,14 @@
 (reg-event-fx
   :proposals/loaded
   interceptors
-  (fn [{:keys [db]} [project result]]
-    (let [id-indexed-proposals (into {}
+  (fn [{:keys [db]} [project raw-result :as p]]
+    (let [parsed (.parse js/JSON raw-result)
+          result (js->clj parsed :keywordize-keys true)
+          id-indexed-proposals (into {}
                                      (map (fn [p]
                                             [(:number p) p])
                                           result))]
+      (look [(setup-candidates id-indexed-proposals)])
       {:db (-> db
                (assoc-in [:votings project :voting/proposals] result)
                (assoc-in [:votings project :voting/candidates] (setup-candidates id-indexed-proposals))

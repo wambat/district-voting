@@ -38,8 +38,7 @@
   (merge
     district0x.db/default-db
     {:load-node-addresses? true
-     :node-url ;;"https://mainnet.infura.io" 
-     "http://localhost:8549"
+     :node-url "https://mainnet.infura.io" ;;"http://localhost:8549"
      :active-page (u/match-current-location constants/routes)
      :routes constants/routes
      :smart-contracts {:dnt-token {:name "District0xNetworkToken" :address "0x0abdace70d3790235af448c88547603b945604ea"}

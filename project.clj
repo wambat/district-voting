@@ -3,7 +3,8 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[cljs-react-material-ui "0.2.43"]
+  :dependencies [[cljs-ajax "0.6.0"]
+                 [cljs-react-material-ui "0.2.43"]
                  [day8.re-frame/async-flow-fx "0.0.6"]
                  [day8.re-frame/http-fx "0.1.4"]
                  [district0x "0.1.20"]

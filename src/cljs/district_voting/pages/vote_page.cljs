@@ -91,6 +91,7 @@
             [:div
              {:key number
               :style {:margin-top styles/desktop-gutter
+                      :overflow-x :auto
                       :width "100%"}}
              [:h2
               {:style styles/margin-bottom-gutter-mini}

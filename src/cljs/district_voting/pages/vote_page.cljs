@@ -7,6 +7,7 @@
     [district-voting.styles :as styles]
     [district0x.components.misc :as misc :refer [row row-with-cols col center-layout paper page]]
     [markdown.core :refer [md->html]]
+    [cljs-time.format :as time-format]
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
     [district0x.utils :as u]
@@ -14,6 +15,11 @@
     [district-voting.components.expandable-text :refer [expandable-text]]
     )
   (:require-macros [reagent.ratom :refer [reaction]]))
+
+(defn iso-8601->rfc822 [date]
+  (when date
+    (let [d (time-format/parse (:date-time-no-ms time-format/formatters) date)]
+      (time-format/unparse-local (time-format/formatters :rfc822) d))))
 
 (defn link [name url]
   [:a {:href url
@@ -56,6 +62,7 @@
         all-proposals-p (subscribe [:proposals/list-open-with-votes-and-reactions :next-district])
         limit (r/atom 10)
         sort-order (r/atom :dnt-votes)
+        expanded (r/atom nil)
         sorted-proposals (subscribe [:sorted-list sort-options] [all-proposals-p sort-order])
         limited-proposals (subscribe [:limited-list] [sorted-proposals limit])]
     (fn []
@@ -91,24 +98,39 @@
             [:div
              {:key number
               :style {:margin-top styles/desktop-gutter
-                      :overflow-x :auto
                       :width "100%"}}
              [:h2
-              {:style styles/margin-bottom-gutter-mini}
+              {:style (:merge styles/margin-bottom-gutter-mini
+                              {:font-size "1.6em"})}
               title]
              ;; WARN: This is as safe as https://github.com/leizongmin/js-xss lib.
-             [expandable-text
-              [:div {:dangerouslySetInnerHTML
-                     {:__html (js/filterXSS (md->html body))}}]]
+             (when (= @expanded number )
+               [:div {:style {:overflow-x :auto}}
+                [:div {:dangerouslySetInnerHTML
+                       {:__html (js/filterXSS (md->html body))}}]
+                [:div {:style (merge styles/text-center
+                                     {:font-size "0.9em"
+                                      :cursor :pointer})}
+                 [:a {:href "#"
+                      :on-click (fn [e]
+                                  (.preventDefault e)
+                                  (reset! expanded nil))}
+                  "Hide description"]]])
              [:div
               {:style styles/margin-top-gutter-less}
               [:div "ID: " number]
-              [:div "Created: " created_at]
+              [:div "Created: " (iso-8601->rfc822 created_at)]
               [:div "Github upvotes: " reactions]
               [:div "Github comments: " comments]
-              [:a {:href html_url
-                   :target :_blank}
-               "Open in Github"]]
+              [:div [:a {:href html_url
+                         :target :_blank}
+                     "Open in Github"]]
+              [:div (if-not (= @expanded number )
+                      [:a {:href "#"
+                           :on-click (fn [e]
+                                       (.preventDefault e)
+                                       (reset! expanded number))}
+                       "Show description"])]]
              [voting-bar
               {:votes-total @votes-total
                :votes @votes

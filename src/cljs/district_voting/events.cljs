@@ -29,18 +29,21 @@
 
 (def interceptors [trim-v (validate-db :district-voting.db/db)])
 
-(def subdomain->initial-dispatch-n
-  {"vote" [[:load-voters-count :next-district]
-           [:proposals/load :next-district]]
-   "feedback" [[:load-voters-count :bittrex-fee]
-               [:setup-update-now-interval]]})
+(def subdomain->initial-events
+  {"vote" {:async-flow {:first-dispatch [:proposals/load :next-district]
+                        :rules [{:when :seen?
+                                 :events [:proposals/loaded]
+                                 :dispatch [:load-voters-count :next-district]}]}}
+   "feedback" {:dispatch-n [[:load-voters-count :bittrex-fee]
+                            [:setup-update-now-interval]]}})
 
 (reg-event-fx
   :initialize
   interceptors
   (fn [{:keys [:db]}]
-    {:dispatch [:watch-my-dnt-balances]
-     :dispatch-n (subdomain->initial-dispatch-n constants/current-subdomain)}))
+    (merge
+     {:dispatch [:watch-my-dnt-balances]}
+     (subdomain->initial-events constants/current-subdomain))))
 
 (reg-event-fx
   :setup-update-now-interval
@@ -61,7 +64,6 @@
   interceptors
   (fn [{:keys [db]} [voting-key]]
     (let [district-voting (get-instance db voting-key)]
-      (look [district-voting])
       {:web3-fx.contract/constant-fns
        {:fns [[(get-instance db voting-key)
                :voters-count
@@ -72,7 +74,6 @@
   :voters-count-loaded
   interceptors
   (fn [{:keys [db]} [voting-key voters-count]]
-    (look [:voters-count-loaded voting-key voters-count])
     {:db (assoc-in db [:votings voting-key :voting/voters-count] (bn/->number voters-count))
      :dispatch [:load-votes voting-key]}))
 
@@ -288,7 +289,6 @@
   :proposals/load
   interceptors
   (fn [{:keys [db]} [project]]
-    ;; (look ["Requested" project])
     {:db (assoc-in db [:proposals project :loading?] true)
      :http-xhrio
      {:method          :get
@@ -312,7 +312,6 @@
                                      (map (fn [p]
                                             [(:number p) p])
                                           result))]
-      (look [(setup-candidates id-indexed-proposals)])
       {:db (-> db
                (assoc-in [:votings project :voting/proposals] result)
                (assoc-in [:votings project :voting/candidates] (setup-candidates id-indexed-proposals))

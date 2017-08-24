@@ -60,8 +60,7 @@
         can-submit? (subscribe [:district0x/can-submit-into-blockchain?])
         vote-form (subscribe [:form.next-district/vote])
         all-proposals-p (subscribe [:proposals/list-open-with-votes-and-reactions :next-district])
-        default-limit 10
-        limit (r/atom default-limit)
+        limit (r/atom 10)
         sort-order (r/atom :dnt-votes)
         expanded (r/atom nil)
         sorted-proposals (subscribe [:sorted-list sort-options] [all-proposals-p sort-order])
@@ -88,70 +87,60 @@
           {:end "xs"}
           [sort-pulldown sort-order sort-options]]]
         (doall
-         (map (fn [{:keys [:number
-                          :title
-                          :body
-                          :html_url
-                          :dnt-votes
-                          :comments
-                          :reactions
-                          :created_at]} idx]
-                [:div
-                 (merge 
-                  {:key number
-                   :style {:margin-top styles/desktop-gutter
-                           :width "100%"}}
-                  (when (= (inc idx) default-limit)
-                    {:id "end-of-default-list"}))
-                 [:h2
-                  {:style (:merge styles/margin-bottom-gutter-mini
-                                  {:font-size "1.6em"})}
-                  title]
-                 ;; WARN: This is as safe as https://github.com/leizongmin/js-xss lib.
-                 (when (= @expanded number )
-                   [:div {:style {:overflow-x :auto}}
-                    [:div {:dangerouslySetInnerHTML
-                           {:__html (js/filterXSS (md->html body))}}]
-                    [:div {:style (merge styles/text-center
-                                         {:font-size "0.9em"
-                                          :cursor :pointer})}
-                     [:a {:href "#"
-                          :on-click (fn [e]
-                                      (.preventDefault e)
-                                      (reset! expanded nil))}
-                      "Hide description"]]])
-                 [:div
-                  {:style styles/margin-top-gutter-less}
-                  [:div "ID: " number]
-                  [:div "Created: " (iso-8601->rfc822 created_at)]
-                  [:div "Github upvotes: " reactions]
-                  [:div "Github comments: " comments]
-                  [:div [:a {:href html_url
-                             :target :_blank}
-                         "Open in Github"]]
-                  [:div (if-not (= @expanded number )
-                          [:a {:href "#"
-                               :on-click (fn [e]
-                                           (.preventDefault e)
-                                           (reset! expanded number))}
-                           "Show description"])]]
-                 [voting-bar
-                  {:votes-total @votes-total
-                   :votes @votes
-                   :index number
-                   :loading? @loading?
-                   :voting-key :next-district
-                   :form-key :form.next-district/vote}]]
-                ) @limited-proposals (range)))]
+         (for [{:keys [:number
+                       :title
+                       :body
+                       :html_url
+                       :dnt-votes
+                       :comments
+                       :reactions
+                       :created_at]} @limited-proposals]
+            [:div
+             {:key number
+              :style {:margin-top styles/desktop-gutter
+                      :width "100%"}}
+             [:h2
+              {:style (:merge styles/margin-bottom-gutter-mini
+                              {:font-size "1.6em"})}
+              title]
+             ;; WARN: This is as safe as https://github.com/leizongmin/js-xss lib.
+             (when (= @expanded number )
+               [:div {:style {:overflow-x :auto}}
+                [:div {:dangerouslySetInnerHTML
+                       {:__html (js/filterXSS (md->html body))}}]
+                [:div {:style (merge styles/text-center
+                                     {:font-size "0.9em"
+                                      :cursor :pointer})}
+                 [:a {:href "#"
+                      :on-click (fn [e]
+                                  (.preventDefault e)
+                                  (reset! expanded nil))}
+                  "Hide description"]]])
+             [:div
+              {:style styles/margin-top-gutter-less}
+              [:div "ID: " number]
+              [:div "Created: " (iso-8601->rfc822 created_at)]
+              [:div "Github upvotes: " reactions]
+              [:div "Github comments: " comments]
+              [:div [:a {:href html_url
+                         :target :_blank}
+                     "Open in Github"]]
+              [:div (if-not (= @expanded number )
+                      [:a {:href "#"
+                           :on-click (fn [e]
+                                       (.preventDefault e)
+                                       (reset! expanded number))}
+                       "Show description"])]]
+             [voting-bar
+              {:votes-total @votes-total
+               :votes @votes
+               :index number
+               :loading? @loading?
+               :voting-key :next-district
+               :form-key :form.next-district/vote}]]))]
        (when (< (count @limited-proposals) (count @sorted-proposals))
          [ui/flat-button
           {:label "View all"
            :primary true
-           :on-touch-tap #(let [pos (or (.-pageYOffset js/window)
-                                        (.-scrollTop (.-documentElement js/document)))]
-                            (reset! limit 0)
-                            (js/setTimeout
-                             (fn []
-                               (.scroll js/window 0 pos))
-                             30))}])
+           :on-touch-tap #(reset! limit 0)}])
        [bottom-logo]])))

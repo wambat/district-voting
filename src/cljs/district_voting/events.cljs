@@ -295,7 +295,7 @@
       :uri             (project-url project)
       :params          {:per_page 1000}
       :headers         {"Accept"  "application/vnd.github.squirrel-girl-preview"}
-      :timeout         18000
+      :timeout         8000
       ;;:response-format (ajax/json-response-format {:keywords? true}) ;;Troubles reading json viag goog lib
       :response-format (ajax/text-response-format)
       :on-success      [:proposals/loaded project]
@@ -321,6 +321,5 @@
  :proposals/load-failure
  interceptors
  (fn [{:keys [db]} [project result]]
-   (js/alert "Failed to load Github issues.")
    {:db (-> db
             (assoc-in [:votings project :loading?] false))}))

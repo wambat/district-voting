@@ -316,7 +316,8 @@
  interceptors
  (fn [{:keys [db]} [result]]
    {:db (-> db
-            (assoc-in [:repos :loading?] false))}))
+            (assoc-in [:repos :loading?] false))
+    :dispatch [:district0x.snackbar/show-message "Sorry, we couldn't fetch projects descriptions"]}))
 
 (defn- project-desc [project]
   "Resolve project's url by project name"
@@ -387,4 +388,5 @@
  interceptors
  (fn [{:keys [db]} [project result]]
    {:db (-> db
-            (assoc-in [:votings project :loading?] false))}))
+            (assoc-in [:votings project :loading?] false))
+    :dispatch [:district0x.snackbar/show-message "Sorry, we couldn't fetch voting issues."]}))

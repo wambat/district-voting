@@ -76,17 +76,26 @@
           :use-loader? true}
          [:h1 {:style (merge styles/text-center
                              styles/margin-bottom-gutter-less)}
-          (str "What should we build next for " (name @project) "?")]
+          (if (= @project :next-district)
+            "What should we build next?"
+            (str "What should we build next for " (name @project) "?"))]
          [row
-          [:div "The district0x project is open source and community-driven. As such, prioritization of the development of specific issues for the various districts happens according to the will of the community of token holders. To signal for the issue you would like to see worked on next, please complete the following steps:"
-           [how-to-instructions]
-           [:div [:strong "Note:"] " You may only vote for one issue per address at a time. No DNT are transferred when signaling, the voting mechanism simply registers your indication to your address. As such, the entire DNT balance stored at that address would be counted towards the vote. Once DNT is transferred to a new address, the district's vote total would be lowered by a corresponding amount. Your vote can be changed at any time by voting again from the same address."]
-           (if @time-remaining
-             [:div [countdown (assoc @time-remaining
-                                     :caption "Time remaining: ")]]
-             [:div [:strong "Note:"]" No date has been set for the closure of the current voting period. Stay tuned for updates!"])
-           [contract-info {:contract-key @project
-                           :style styles/margin-bottom-gutter-less}]]
+          (if (= @project :next-district)
+            [:div "district0x makes use of a " [link "district proposal process" "https://github.com/district0x/district-proposals"]
+             " to allow the community to determine what districts they would like to see built and deployed to the network next by the district0x team.  To signal for a district you would like to see launched, please complete the following steps:"
+             [how-to-instructions]
+             [:div "Note: You may only vote for one district per address at a time. No DNT are transferred when signaling, the voting mechanism simply registers your indication to your address. As such, the entire DNT balance stored at that address would be counted towards the vote. Once DNT is transferred to a new address, the district's vote total would be lowered by a corresponding amount. Your vote can be changed at any time by voting again from the same address."]
+             [contract-info {:contract-key :next-district
+                             :style styles/margin-bottom-gutter-less}]]
+            [:div "The district0x project is open source and community-driven. As such, prioritization of the development of specific issues for the various districts happens according to the will of the community of token holders. To signal for the issue you would like to see worked on next, please complete the following steps:"
+             [how-to-instructions]
+             [:div [:strong "Note:"] " You may only vote for one issue per address at a time. No DNT are transferred when signaling, the voting mechanism simply registers your indication to your address. As such, the entire DNT balance stored at that address would be counted towards the vote. Once DNT is transferred to a new address, the district's vote total would be lowered by a corresponding amount. Your vote can be changed at any time by voting again from the same address."]
+             (if @time-remaining
+               [:div [countdown (assoc @time-remaining
+                                       :caption "Time remaining: ")]]
+               [:div [:strong "Note:"]" No date has been set for the closure of the current voting period. Stay tuned for updates!"])
+             [contract-info {:contract-key @project
+                             :style styles/margin-bottom-gutter-less}]])
           [:div
            {:style {:width "100%"
                     :margin-right 10}}
